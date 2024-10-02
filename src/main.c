@@ -3,7 +3,7 @@
 #include <string.h>
 #include <stdint.h>
 #include <unistd.h>
-#include <cpuid.h>
+//#include <cpuid.h>
 #include <sys/utsname.h>
 #include <sys/statvfs.h>
 
@@ -103,23 +103,38 @@ int get_cpuinfo(struct cpuinfo* info) {
 	fclose(file);
 
 	char* name_str = strstr(buffer, "model name");
-	uint8_t quit = 0;
-	while (!quit) {
-		if (*name_str != ':')
-			name_str++;
-		else {
-			name_str += 2;
-			quit = 1;
-		}
-	}
-
+	char* processor_str = buffer;
+	int cores = 1;
 	int length = 0;
-	quit = 0;
-	while (!quit) {
-		if (name_str[length] != '\n')
-			length++;
-		else
-			quit = 1;
+	if (name_str != NULL) {
+		uint8_t quit = 0;
+		while (!quit) {
+			if (*name_str != ':')
+				name_str++;
+			else {
+				name_str += 2;
+				quit = 1;
+			}
+		}
+		quit = 0;
+		while (!quit) {
+			if (name_str[length] != '\n')
+				length++;
+			else
+				quit = 1;
+		}
+	} else {
+		while (processor_str != NULL) {
+			processor_str += 10;
+			processor_str = strstr(processor_str, "processor");
+			if (processor_str != NULL) {
+				cores++;
+			}
+		}
+
+		name_str = malloc(128);
+		snprintf(name_str, 128, "%d Cores", cores);
+		length = 128;
 	}
 
 	if (length >= 256) {
